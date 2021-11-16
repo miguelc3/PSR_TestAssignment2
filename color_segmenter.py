@@ -103,6 +103,7 @@ def main():
 
     # Variable to chek if the user saved any values for limits
     pressed_w = False
+
     # ----------------------------------------------------------
     # EXECUTION
     # ----------------------------------------------------------
