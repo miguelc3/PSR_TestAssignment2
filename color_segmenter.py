@@ -66,6 +66,10 @@ def main():
 
     # initial setup - define a video capture object
     capture = cv.VideoCapture(0)
+    if capture.isOpened():
+        print('\n' + Back.GREEN + 'Capturing video from webcam' + Style.RESET_ALL)
+    else:
+        print(Back.RED + 'Warning: Camera is not working' + Style.RESET_ALL)
 
     # window names
     window_original = 'Original'
@@ -75,8 +79,8 @@ def main():
 
     # Predefined limits of segmentation - Accept all values of B G R
     limits_original = {'limits': {'B': {'max': 255, 'min': 0},
-                         'G': {'max': 255, 'min': 0},
-                         'R': {'max': 255, 'min': 0}}}
+                                  'G': {'max': 255, 'min': 0},
+                                  'R': {'max': 255, 'min': 0}}}
 
     # To print if the user does not press 'w'
     limits = copy.deepcopy(limits_original)
@@ -130,7 +134,7 @@ def main():
                 print('\nThe predefined values for limits were saved:')
                 print(limits_original)
             elif pressed_w:
-                print('The vales of the segmentation limits saved:')
+                print('\nThe vales of the segmentation limits saved:')
                 print(limits)
             break
 
@@ -138,8 +142,8 @@ def main():
             pressed_w = True
             # if the user press w -> write in the json file
             with open(file_name, 'w') as file_handle:
-                print(Fore.GREEN + '** writing dictionary "limits" to file **' + file_name + Style.RESET_ALL)
-                json.dump(str(limits), file_handle)
+                print(Fore.GREEN + '** writing dictionary "limits" to file ' + file_name + ' **' + Style.RESET_ALL)
+                json.dump(limits, file_handle)
 
 
 if __name__ == '__main__':
