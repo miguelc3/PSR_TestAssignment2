@@ -3,9 +3,10 @@
 """
 # ----------------------------------------------------------
 Test Assignment 2, PSR
-Miguel Pereira
-...
-...
+color_segmenter.py
+MIGUEL PEREIRA
+GABRIELE MICHELI
+DIOGO VIEIRA
 ----------------------------------------------------------
 """
 

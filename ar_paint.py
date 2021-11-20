@@ -1,5 +1,15 @@
 #!/usr/bin/python3
 
+"""
+# ----------------------------------------------------------
+Test Assignment 2, PSR
+ar_paint.py
+MIGUEL PEREIRA
+GABRIELE MICHELI
+DIOGO VIEIRA
+----------------------------------------------------------
+"""
+
 # -------------------------------------
 # IMPORT LIBRARIES
 # -------------------------------------
@@ -9,6 +19,13 @@ import argparse
 import json
 import numpy as np
 import time
+from colorama import Back, Fore, Style
+import math
+from functools import partial
+
+# Global variables
+drawing = False
+(yi, xi) = (None, None)  # To draw when use shake prevention
 
 
 # ----------------------------------------------------------
@@ -22,7 +39,12 @@ def main():
     # Define argparse
     parser = argparse.ArgumentParser(description='Augmented Reality Paint')
     parser.add_argument('-j', '--json', type=str, required=True, help='Full path to the json file.')
+    parser.add_argument('-usp', '--use_shake_prevention', action='store_true', help='Use shake prevention '
+                        'to avoid unwanted lines')
     args = vars(parser.parse_args())
+
+    # Use shake prevention? True/False
+    shake_prevention = args['use_shake_prevention']
 
     # Load limits from json file
     with open(args['json']) as json_file:
@@ -48,10 +70,10 @@ def main():
     # Properties of the circle that defines the object centroid
     radius = 2
     color_centroid = (0, 0, 255)  # Red in BGR
+    thickness_centroid = -1
 
-    #thickness = 2
-    thickness = -1 #If I'm not mistaken, this makes it so the circle is coloured; that way, we only have to manipulate the radius to control the thickness
-
+    # Properties of the line
+    thickness_line = 2
 
     # Initialize a white board to paint -> canvas
     canvas = 255*np.ones(frame.shape, dtype=np.uint8)
@@ -61,8 +83,24 @@ def main():
     color_paint = (0, 0, 0)
     centroids = []
 
-    # Explain how to execute the program
-    print('Press any key to start')
+    # Explain how the program runs
+    print(Back.RED + '   ' + Style.RESET_ALL + ' Hello, welcome to our Augmented Reality Paint program :) '
+          + Back.RED + '   ' + Style.RESET_ALL + '\n\n')
+    print('This program will use the limits of segmentation defined on the Color Segmenter file')
+    print('Use the segmented object to draw on the canvas window \n')
+    print(Fore.BLUE + 'Special keys: ' + Style.RESET_ALL)
+    print(Back.GREEN + '                                  ' + Style.RESET_ALL)
+    print('r -> Change color to red')
+    print('g -> Change color to green')
+    print('b -> Change color to blue')
+    print('+ -> Increase drawing thickness')
+    print('- -> Decrease drawing thickness')
+    print('c -> Clear canvas')
+    print('w -> save image')
+    if shake_prevention:
+        print('With shake prevention mode, you can also draw with the mouse')
+    print(Back.GREEN + '                                  ' + Style.RESET_ALL + '\n')
+
 
     # ----------------------------------------------------------
     # EXECUTION
@@ -79,13 +117,17 @@ def main():
         cx, cy = largest_object(mask_frame, window_largest)
         centroid = (cx, cy)
         if centroid != (0, 0):
-            frame_gui = cv2.circle(frame_gui, centroid, radius, color_centroid, thickness)
+            frame_gui = cv2.circle(frame_gui, centroid, radius, color_centroid, thickness_centroid)
             centroids.append(centroid)
             if len(centroids) == 1:
                 centroids.append(centroids[0])
-            # Paint using the centroid as pen -> canvas_paint funtion
-            #We should also pass the circle radius as an argument for the canvas_paint() function, so the brush thickness varies (D.V.)
-            canvas_paint(window_canvas, color_paint, centroid, canvas, centroids, radius)
+            # Paint using the centroid as pen -> canvas_paint function
+            canvas_paint(window_canvas, color_paint, canvas, centroids, thickness_line, shake_prevention)
+        # If the shake prevention mode is activated allow to paint with mouse
+        if shake_prevention:
+            draw_mouse_partial = partial(draw_mouse, color=color_paint, thickness=thickness_line)
+            cv2.setMouseCallback(window_canvas, draw_mouse_partial, param=canvas)
+            cv2.imshow(window_canvas, canvas)
 
         cv2.imshow(window_original, frame_gui)
 
@@ -116,22 +158,19 @@ def main():
                 print('File saved successfully')
             else:
                 print('Error in saving file')
-
-        #Added by Diogo
         elif key == ord('+'):
-            radius += 1
-            print('You increased the brush thickness')
+            thickness_line += 1
+            print('You increased the brush thickness to ' + str(thickness_line))
         elif key == ord('-'):
-            if radius > 1:
-                radius -= 1
-                print('You decreased the brush thickness')
+            if thickness_line > 1:
+                thickness_line -= 1
+                print('You decreased the brush thickness to ' + str(thickness_line))
             else:
                 print('The thickness cant be decreased further')
-
-
-
-
-
+        elif key == ord('v'):
+            cv2.imshow(window_canvas, frame_gui)
+            # try to hold on the image
+            cv2.imshow(window_canvas, canvas)
 
 
 # ----------------------------------------------------------
@@ -167,7 +206,6 @@ def largest_object(mask, window):
         else:
             cx = int(m['m10'] / m['m00'])
             cy = int(m['m01'] / m['m00'])
-
     else:
         cx = 0
         cy = 0
@@ -177,14 +215,48 @@ def largest_object(mask, window):
     return cx, cy
 
 
-def canvas_paint(window, color, centroid, image, points, radius):
-    #radius = 1
-    thickness = -1
-    # Draw a point
-    #cv2.circle(image, centroid, radius, color, thickness)
-    # Draw line
-    cv2.line(image, points[-1], points[-2], color, thickness=radius) #D.V
-    cv2.imshow(window, image)
+# ----------------------------------------------------------
+# FUNCTION TO DRAW ON WINDOW CANVAS
+# ----------------------------------------------------------
+def canvas_paint(window, color, image, points, thickness, shake_prevention):
+
+    if shake_prevention:
+        # Check if distance < threshold -> draw line
+        dist = math.dist(points[-1], points[-2])
+        if dist < 20:
+            # Draw line
+            cv2.line(image, points[-1], points[-2], color, thickness)
+            cv2.imshow(window, image)
+    # If shake prevention not activated -> draw line anyway
+    else:
+        # Draw line
+        cv2.line(image, points[-1], points[-2], color, thickness)
+        cv2.imshow(window, image)
+
+
+# ------------------------------------------------------------------
+# FUNCTION TO DRAW WITH MOUSE WHEN USE_SHAKE_PREVENTION IS ACTIVATED
+# ------------------------------------------------------------------
+def draw_mouse(event, x, y, flags, param, color, thickness):
+
+    global drawing, xi, yi
+
+    if event == cv2.EVENT_LBUTTONDOWN:
+        drawing = True
+        print('Started painting at: (x, y) = ' + str(x) + ', ' + str(y))
+        xi = x
+        yi = y
+
+    elif event == cv2.EVENT_MOUSEMOVE:
+        if drawing:
+            cv2.line(param, (xi, yi), (x, y), color, thickness)
+            xi = x
+            yi = y
+
+    elif event == cv2.EVENT_LBUTTONUP:
+        drawing = False
+        cv2.line(param, (xi, yi), (x, y), color, thickness)
+        print('Ended painting at: (x, y) = ' + str(x) + ', ' + str(y))
 
 
 if __name__ == '__main__':
