@@ -181,7 +181,7 @@ def canvas_paint(window, color, centroid, image, points, radius):
     #radius = 1
     thickness = -1
     # Draw a point
-    cv2.circle(image, centroid, radius, color, thickness)
+    #cv2.circle(image, centroid, radius, color, thickness)
     # Draw line
     cv2.line(image, points[-1], points[-2], color, thickness=radius) #D.V
     cv2.imshow(window, image)
