@@ -48,7 +48,10 @@ def main():
     # Properties of the circle that defines the object centroid
     radius = 2
     color_centroid = (0, 0, 255)  # Red in BGR
-    thickness = 2
+
+    #thickness = 2
+    thickness = -1 #If I'm not mistaken, this makes it so the circle is coloured; that way, we only have to manipulate the radius to control the thickness
+
 
     # Initialize a white board to paint -> canvas
     canvas = 255*np.ones(frame.shape, dtype=np.uint8)
@@ -81,7 +84,8 @@ def main():
             if len(centroids) == 1:
                 centroids.append(centroids[0])
             # Paint using the centroid as pen -> canvas_paint funtion
-            canvas_paint(window_canvas, color_paint, centroid, canvas, centroids)
+            #We should also pass the circle radius as an argument for the canvas_paint() function, so the brush thickness varies (D.V.)
+            canvas_paint(window_canvas, color_paint, centroid, canvas, centroids, radius)
 
         cv2.imshow(window_original, frame_gui)
 
@@ -112,6 +116,22 @@ def main():
                 print('File saved successfully')
             else:
                 print('Error in saving file')
+
+        #Added by Diogo
+        elif key == ord('+'):
+            radius += 1
+            print('You increased the brush thickness')
+        elif key == ord('-'):
+            if radius > 1:
+                radius -= 1
+                print('You decreased the brush thickness')
+            else:
+                print('The thickness cant be decreased further')
+
+
+
+
+
 
 
 # ----------------------------------------------------------
@@ -157,13 +177,13 @@ def largest_object(mask, window):
     return cx, cy
 
 
-def canvas_paint(window, color, centroid, image, points):
-    radius = 1
-    thickness = 1
+def canvas_paint(window, color, centroid, image, points, radius):
+    #radius = 1
+    thickness = -1
     # Draw a point
     cv2.circle(image, centroid, radius, color, thickness)
     # Draw line
-    cv2.line(image, points[-1], points[-2], color, thickness)
+    cv2.line(image, points[-1], points[-2], color, thickness=radius) #D.V
     cv2.imshow(window, image)
 
 
