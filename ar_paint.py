@@ -8,6 +8,7 @@ import cv2
 import argparse
 import json
 import numpy as np
+import time
 
 
 # ----------------------------------------------------------
@@ -46,7 +47,7 @@ def main():
 
     # Properties of the circle that defines the object centroid
     radius = 2
-    color_circle = (255, 0, 0)  # Blue in BGR
+    color_centroid = (0, 0, 255)  # Red in BGR
     thickness = 2
 
     # Initialize a white board to paint -> canvas
@@ -55,6 +56,7 @@ def main():
 
     # Black as pre defined color to paint
     color_paint = (0, 0, 0)
+    centroids = []
 
     # Explain how to execute the program
     print('Press any key to start')
@@ -74,11 +76,16 @@ def main():
         cx, cy = largest_object(mask_frame, window_largest)
         centroid = (cx, cy)
         if centroid != (0, 0):
-            frame_gui = cv2.circle(frame_gui, centroid, radius, color_circle, thickness)
-            canvas_paint(window_canvas, color_paint, centroid, canvas)
+            frame_gui = cv2.circle(frame_gui, centroid, radius, color_centroid, thickness)
+            centroids.append(centroid)
+            if len(centroids) == 1:
+                centroids.append(centroids[0])
+            # Paint using the centroid as pen -> canvas_paint funtion
+            canvas_paint(window_canvas, color_paint, centroid, canvas, centroids)
 
         cv2.imshow(window_original, frame_gui)
 
+        # key controls
         key = cv2.waitKey(10)
         if key == ord('q'):
             print('You pressed "q" to exit. Good Bye!')
@@ -92,6 +99,19 @@ def main():
         elif key == ord('b'):
             color_paint = (255, 0, 0)
             print('You press "b" to paint blue')
+        elif key == ord('c'):
+            canvas = 255 * np.ones(frame.shape, dtype=np.uint8)
+            cv2.imshow(window_canvas, canvas)
+            print('You pressed "c" to clear canvas')
+        elif key == ord('w'):
+            t = time.ctime(time.time())
+            t = t.replace(' ', '_')
+            filename = 'drawing_' + t + '.png'
+            result = cv2.imwrite(filename, canvas)
+            if result:
+                print('File saved successfully')
+            else:
+                print('Error in saving file')
 
 
 # ----------------------------------------------------------
@@ -137,10 +157,13 @@ def largest_object(mask, window):
     return cx, cy
 
 
-def canvas_paint(window, color, centroid, image):
+def canvas_paint(window, color, centroid, image, points):
     radius = 1
     thickness = 1
+    # Draw a point
     cv2.circle(image, centroid, radius, color, thickness)
+    # Draw line
+    cv2.line(image, points[-1], points[-2], color, thickness)
     cv2.imshow(window, image)
 
 
