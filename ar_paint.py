@@ -23,6 +23,7 @@ from colorama import Back, Fore, Style
 import math
 from functools import partial
 
+
 # Global variables
 drawing = False
 (yi, xi) = (None, None)  # To draw when use shake prevention
@@ -79,9 +80,14 @@ def main():
     canvas = 255*np.ones(frame.shape, dtype=np.uint8)
     cv2.imshow(window_canvas, canvas)
 
+
+
+
     # Black as pre defined color to paint
     color_paint = (0, 0, 0)
     centroids = []
+
+
 
     # Explain how the program runs
     print(Back.RED + '   ' + Style.RESET_ALL + ' Hello, welcome to our Augmented Reality Paint program :) '
@@ -110,6 +116,7 @@ def main():
         # Create a copy of the frame to manipulate
         frame_gui = copy.deepcopy(frame)
 
+
         # Segment image -> segmented function
         mask_frame = segmented(frame_gui, mins, maxs, window_segmented)
 
@@ -123,11 +130,14 @@ def main():
                 centroids.append(centroids[0])
             # Paint using the centroid as pen -> canvas_paint function
             canvas_paint(window_canvas, color_paint, canvas, centroids, thickness_line, shake_prevention)
+
         # If the shake prevention mode is activated allow to paint with mouse
+
         if shake_prevention:
             draw_mouse_partial = partial(draw_mouse, color=color_paint, thickness=thickness_line)
             cv2.setMouseCallback(window_canvas, draw_mouse_partial, param=canvas)
             cv2.imshow(window_canvas, canvas)
+
 
         cv2.imshow(window_original, frame_gui)
 
@@ -168,9 +178,15 @@ def main():
             else:
                 print('The thickness cant be decreased further')
         elif key == ord('v'):
-            cv2.imshow(window_canvas, frame_gui)
-            # try to hold on the image
-            cv2.imshow(window_canvas, canvas)
+            canvas = frame
+            print('Picture taken! You can now draw on top of it!')
+
+        elif key== ord('s'):
+
+
+
+
+
 
 
 # ----------------------------------------------------------
