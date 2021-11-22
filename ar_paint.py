@@ -119,38 +119,18 @@ def draw_mouse(event, x, y, flags, param, color, thickness):
         cv2.line(param, (xi_mouse, yi_mouse), (x, y), color, thickness)
         print('Ended painting at: (x, y) = ' + str(x) + ', ' + str(y))
 
-
-
-# ------------------------------------------------------------------
-# FUNCTION TO DRAW CIRCLE WITH MOUSE
-# ------------------------------------------------------------------
-def draw_circle():
-    pass
-
-
-# 1 step: check if the user has pressed the left mouse button
-
-# 2 step: save the coordinates in an [x,y] list
-
-# 3 step: print circle with color choosed. Adapt the dimension in function of the mouse movement
-
-# 4 step: check if the key is pressed or not (WHILE)
-
-# 5 step: if the key is pressed -> calculate radius as: distance(center,last_mouse_posiion)
-
-
 # ------------------------------------------------------------------
 # FUNCTION TO DRAW SQUARE WITH MOUSE
 # ------------------------------------------------------------------
-def draw_rectangle(event, x, y, flags, param, color, thickness):
-    global xi_square, yi_square
 
-    key = cv2.waitKey(10)
-    while key == ord('s'):
-        xi_square = x
-        yi_square = y
-        if event == cv2.EVENT_MOUSEMOVE:
-            cv2.rectangle(param, (xi_square, yi_square), (x, y), color, thickness)
+
+# 1 step: save the mouse initial coordinates in a tuple (x,y)
+
+# 2 step: print circle with color choosed. Adapt the dimension in function of the mouse movement
+
+# 3 step: check if the key is pressed or not (WHILE)
+
+# 4 step: if the key is pressed -> calculate radius as: distance(center,last_mouse_posiion)
 
 
 # ---------------------------------------------------------
@@ -224,7 +204,7 @@ def main():
     print('w -> save image')
     print('v -> Print picture to draw')
     print('s -> Draw rectangle')
-    print('e -> Draw circle')
+    print('o -> Draw circle')
     if shake_prevention:
         print('You are using shake prevention mode, you can also draw with the mouse')
     print(Back.GREEN + '                                  ' + Style.RESET_ALL + '\n')
@@ -299,14 +279,24 @@ def main():
             canvas = frame
             print('Picture taken! You can now draw on top of it!')
         elif key == ord('s'):
-            # call the 'draw_rectangle' function
-            draw_rectangle_partial = partial(draw_rectangle, color_paint, thickness_line)
-            cv2.setMouseCallback(window_canvas, draw_rectangle_partial, param=canvas)
-            print('Rectangle correctly drawn')
+            # TODO: draw rectangle
+            print('Drawing rectangle')
+
         elif key == ord('o'):
-            # call the 'draw_circle' function
-            draw_circle()
-            print('Circle correctly drawn')
+            drawing_flag = False
+            # TODO: draw circle
+            print('Drawing circle')
+            cx, cy = largest_object(mask_frame, window_largest)
+            center_coordinates = (cx,cy)
+            while drawing_flag == False:
+                stop_key = cv2.waitKey(10)
+                if stop_key == ord('o'):
+                    drawing_flag = True
+                cx, cy = largest_object(mask_frame, window_largest)
+                actual_coordinates = (cx, cy)
+                radius = int(math.dist(center_coordinates, actual_coordinates))
+                circle_image = cv2.circle(canvas, center_coordinates, radius, color_paint, thickness_line)
+                cv2.imshow(window_canvas, circle_image)
 
 
 if __name__ == '__main__':
