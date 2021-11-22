@@ -15,6 +15,7 @@ DIOGO VIEIRA
 # -------------------------------------
 import copy
 import cv2
+# import cv2 as cv
 import argparse
 import json
 import numpy as np
@@ -23,10 +24,118 @@ from colorama import Back, Fore, Style
 import math
 from functools import partial
 
-
 # Global variables
 drawing = False
 (yi, xi) = (None, None)  # To draw when use shake prevention
+
+
+# ----------------------------------------------------------
+# FUNCTION TO SEGMENT IMAGE WITH THE LIMITS FROM THE JSON FILE
+# ----------------------------------------------------------
+def segmented(frame, mins, maxs, window):
+    mask_frame = cv2.inRange(frame, np.array(mins), np.array(maxs))
+    cv2.imshow(window, mask_frame)
+
+    return mask_frame
+
+# ----------------------------------------------------------
+# FUNCTION TO FIND THE LARGEST OBJECT AND THE CENTROID
+# ----------------------------------------------------------
+def largest_object(mask, window):
+    # Initialize the the window of the largest object -> all black
+    mask_largest = np.zeros(mask.shape, dtype=np.uint8)
+    cv2.imshow(window, mask_largest)
+
+    # Find the largest object
+    contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+    cnt = sorted(contours, key=cv2.contourArea)
+    if len(cnt) > 0:
+        largest = cnt[-1]
+        cv2.fillPoly(mask_largest, pts=[largest], color=(255, 255, 255))
+
+        # Find centroid
+        m = cv2.moments(largest)
+        if m['m00'] == 0:
+            cx = 0
+            cy = 0
+        else:
+            cx = int(m['m10'] / m['m00'])
+            cy = int(m['m01'] / m['m00'])
+    else:
+        cx = 0
+        cy = 0
+
+    # Display the largest object
+    cv2.imshow(window, mask_largest)
+    return cx, cy
+
+
+# ----------------------------------------------------------
+# FUNCTION TO DRAW ON WINDOW CANVAS
+# ----------------------------------------------------------
+def canvas_paint(window, color, image, points, thickness, shake_prevention):
+
+    if shake_prevention:
+        # Check if distance < threshold -> draw line
+        dist = math.dist(points[-1], points[-2])
+        if dist < 20:
+            # Draw line
+            cv2.line(image, points[-1], points[-2], color, thickness)
+            cv2.imshow(window, image)
+    # If shake prevention not activated -> draw line anyway
+    else:
+        # Draw line
+        cv2.line(image, points[-1], points[-2], color, thickness)
+        cv2.imshow(window, image)
+
+
+# ------------------------------------------------------------------
+# FUNCTION TO DRAW WITH MOUSE WHEN USE_SHAKE_PREVENTION IS ACTIVATED
+# ------------------------------------------------------------------
+def draw_mouse(event, x, y, flags, param, color, thickness):
+
+    global drawing, xi, yi
+
+    if event == cv2.EVENT_LBUTTONDOWN:
+        drawing = True
+        print('Started painting at: (x, y) = ' + str(x) + ', ' + str(y))
+        xi = x
+        yi = y
+
+    elif event == cv2.EVENT_MOUSEMOVE:
+        if drawing:
+            cv2.line(param, (xi, yi), (x, y), color, thickness)
+            xi = x
+            yi = y
+
+    elif event == cv2.EVENT_LBUTTONUP:
+        drawing = False
+        cv2.line(param, (xi, yi), (x, y), color, thickness)
+        print('Ended painting at: (x, y) = ' + str(x) + ', ' + str(y))
+
+    # TODO: Create function that draw circles
+    # ------------------------------------------------------------------
+    # FUNCTION TO DRAW CIRCLE WITH MOUSE
+    # ------------------------------------------------------------------
+    #def draw_circle():
+
+    # 1 step: check if the user has pressed the left mouse button
+
+    # 2 step: save the coordinates in an [x,y] list
+
+    # 3 step: print circle with color choosed. Adapt the dimension in function of the mouse movement
+
+    # 4 step: check if the key is pressed or not (WHILE)
+
+    # 5 step: if the key is pressed -> calculate radius as: distance(center,last_mouse_posiion)
+
+    # TODO: Create function that draw rectangle
+    # ------------------------------------------------------------------
+    # FUNCTION TO DRAW RECTANGLE WITH MOUSE
+    # ------------------------------------------------------------------
+    # def draw_rectangle():
+
+
 
 
 # ----------------------------------------------------------
@@ -103,6 +212,9 @@ def main():
     print('- -> Decrease drawing thickness')
     print('c -> Clear canvas')
     print('w -> save image')
+    print('v -> Print picture to draw')
+    print('s -> Draw rectangle')
+    print('e -> Draw circle')
     if shake_prevention:
         print('With shake prevention mode, you can also draw with the mouse')
     print(Back.GREEN + '                                  ' + Style.RESET_ALL + '\n')
@@ -180,100 +292,12 @@ def main():
         elif key == ord('v'):
             canvas = frame
             print('Picture taken! You can now draw on top of it!')
-
         elif key== ord('s'):
-
-
-
-
-
-
-
-# ----------------------------------------------------------
-# FUNCTION TO SEGMENT IMAGE WITH THE LIMITS FROM THE JSON FILE
-# ----------------------------------------------------------
-def segmented(frame, mins, maxs, window):
-    mask_frame = cv2.inRange(frame, np.array(mins), np.array(maxs))
-    cv2.imshow(window, mask_frame)
-
-    return mask_frame
-
-
-# ----------------------------------------------------------
-# FUNCTION TO FIND THE LARGEST OBJECT AND THE CENTROID
-# ----------------------------------------------------------
-def largest_object(mask, window):
-    # Initialize the the window of the largest object -> all black
-    mask_largest = np.zeros(mask.shape, dtype=np.uint8)
-    cv2.imshow(window, mask_largest)
-
-    # Find the largest object
-    contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
-    cnt = sorted(contours, key=cv2.contourArea)
-    if len(cnt) > 0:
-        largest = cnt[-1]
-        cv2.fillPoly(mask_largest, pts=[largest], color=(255, 255, 255))
-
-        # Find centroid
-        m = cv2.moments(largest)
-        if m['m00'] == 0:
-            cx = 0
-            cy = 0
-        else:
-            cx = int(m['m10'] / m['m00'])
-            cy = int(m['m01'] / m['m00'])
-    else:
-        cx = 0
-        cy = 0
-
-    # Display the largest object
-    cv2.imshow(window, mask_largest)
-    return cx, cy
-
-
-# ----------------------------------------------------------
-# FUNCTION TO DRAW ON WINDOW CANVAS
-# ----------------------------------------------------------
-def canvas_paint(window, color, image, points, thickness, shake_prevention):
-
-    if shake_prevention:
-        # Check if distance < threshold -> draw line
-        dist = math.dist(points[-1], points[-2])
-        if dist < 20:
-            # Draw line
-            cv2.line(image, points[-1], points[-2], color, thickness)
-            cv2.imshow(window, image)
-    # If shake prevention not activated -> draw line anyway
-    else:
-        # Draw line
-        cv2.line(image, points[-1], points[-2], color, thickness)
-        cv2.imshow(window, image)
-
-
-# ------------------------------------------------------------------
-# FUNCTION TO DRAW WITH MOUSE WHEN USE_SHAKE_PREVENTION IS ACTIVATED
-# ------------------------------------------------------------------
-def draw_mouse(event, x, y, flags, param, color, thickness):
-
-    global drawing, xi, yi
-
-    if event == cv2.EVENT_LBUTTONDOWN:
-        drawing = True
-        print('Started painting at: (x, y) = ' + str(x) + ', ' + str(y))
-        xi = x
-        yi = y
-
-    elif event == cv2.EVENT_MOUSEMOVE:
-        if drawing:
-            cv2.line(param, (xi, yi), (x, y), color, thickness)
-            xi = x
-            yi = y
-
-    elif event == cv2.EVENT_LBUTTONUP:
-        drawing = False
-        cv2.line(param, (xi, yi), (x, y), color, thickness)
-        print('Ended painting at: (x, y) = ' + str(x) + ', ' + str(y))
-
+            # call the 'draw_rectangle' function
+            print('Rectangle correctly drawn')
+        elif key== ord('e'):
+            # call the 'draw_circle' function
+            print('Circle correctly drawn')
 
 if __name__ == '__main__':
     main()
