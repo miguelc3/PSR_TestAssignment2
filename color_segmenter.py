@@ -40,9 +40,6 @@ def trackbar(_, window, limits):
     [limits['limits']['B']['min'], limits['limits']['G']['min'], limits['limits']['R']['min']] = mins
     [limits['limits']['B']['max'], limits['limits']['G']['max'], limits['limits']['R']['max']] = maxs
 
-    #print('\nNew limits defined: ')
-    #print(limits)
-
     return limits, mins, maxs
 
 

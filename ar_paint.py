@@ -24,9 +24,15 @@ from colorama import Back, Fore, Style
 import math
 from functools import partial
 
+#------------------------------------------
 # Global variables
-drawing = False
-(yi, xi) = (None, None)  # To draw when use shake prevention
+#------------------------------------------
+# To draw when use shake prevention
+drawing_mouse = False
+(yi_mouse, xi_mouse) = (None, None)
+# To draw squares/rectangles
+drawing_square = False
+(xi_square, yi_square) = (None, None)
 
 
 # ----------------------------------------------------------
@@ -94,51 +100,60 @@ def canvas_paint(window, color, image, points, thickness, shake_prevention):
 # ------------------------------------------------------------------
 def draw_mouse(event, x, y, flags, param, color, thickness):
 
-    global drawing, xi, yi
+    global drawing_mouse, xi_mouse, yi_mouse
 
     if event == cv2.EVENT_LBUTTONDOWN:
-        drawing = True
+        drawing_mouse = True
         print('Started painting at: (x, y) = ' + str(x) + ', ' + str(y))
-        xi = x
-        yi = y
+        xi_mouse = x
+        yi_mouse = y
 
     elif event == cv2.EVENT_MOUSEMOVE:
-        if drawing:
-            cv2.line(param, (xi, yi), (x, y), color, thickness)
-            xi = x
-            yi = y
+        if drawing_mouse:
+            cv2.line(param, (xi_mouse, yi_mouse), (x, y), color, thickness)
+            xi_mouse = x
+            yi_mouse = y
 
     elif event == cv2.EVENT_LBUTTONUP:
-        drawing = False
-        cv2.line(param, (xi, yi), (x, y), color, thickness)
+        drawing_mouse = False
+        cv2.line(param, (xi_mouse, yi_mouse), (x, y), color, thickness)
         print('Ended painting at: (x, y) = ' + str(x) + ', ' + str(y))
 
-    # TODO: Create function that draw circles
-    # ------------------------------------------------------------------
-    # FUNCTION TO DRAW CIRCLE WITH MOUSE
-    # ------------------------------------------------------------------
-    #def draw_circle():
-
-    # 1 step: check if the user has pressed the left mouse button
-
-    # 2 step: save the coordinates in an [x,y] list
-
-    # 3 step: print circle with color choosed. Adapt the dimension in function of the mouse movement
-
-    # 4 step: check if the key is pressed or not (WHILE)
-
-    # 5 step: if the key is pressed -> calculate radius as: distance(center,last_mouse_posiion)
-
-    # TODO: Create function that draw rectangle
-    # ------------------------------------------------------------------
-    # FUNCTION TO DRAW RECTANGLE WITH MOUSE
-    # ------------------------------------------------------------------
-    # def draw_rectangle():
 
 
+# ------------------------------------------------------------------
+# FUNCTION TO DRAW CIRCLE WITH MOUSE
+# ------------------------------------------------------------------
+def draw_circle():
+    pass
 
 
-# ----------------------------------------------------------
+# 1 step: check if the user has pressed the left mouse button
+
+# 2 step: save the coordinates in an [x,y] list
+
+# 3 step: print circle with color choosed. Adapt the dimension in function of the mouse movement
+
+# 4 step: check if the key is pressed or not (WHILE)
+
+# 5 step: if the key is pressed -> calculate radius as: distance(center,last_mouse_posiion)
+
+
+# ------------------------------------------------------------------
+# FUNCTION TO DRAW SQUARE WITH MOUSE
+# ------------------------------------------------------------------
+def draw_rectangle(event, x, y, flags, param, color, thickness):
+    global xi_square, yi_square
+
+    key = cv2.waitKey(10)
+    while key == ord('s'):
+        xi_square = x
+        yi_square = y
+        if event == cv2.EVENT_MOUSEMOVE:
+            cv2.rectangle(param, (xi_square, yi_square), (x, y), color, thickness)
+
+
+# ---------------------------------------------------------
 # MAIN FUNCTION
 # ----------------------------------------------------------
 def main():
@@ -189,14 +204,9 @@ def main():
     canvas = 255*np.ones(frame.shape, dtype=np.uint8)
     cv2.imshow(window_canvas, canvas)
 
-
-
-
     # Black as pre defined color to paint
     color_paint = (0, 0, 0)
     centroids = []
-
-
 
     # Explain how the program runs
     print(Back.RED + '   ' + Style.RESET_ALL + ' Hello, welcome to our Augmented Reality Paint program :) '
@@ -216,9 +226,8 @@ def main():
     print('s -> Draw rectangle')
     print('e -> Draw circle')
     if shake_prevention:
-        print('With shake prevention mode, you can also draw with the mouse')
+        print('You are using shake prevention mode, you can also draw with the mouse')
     print(Back.GREEN + '                                  ' + Style.RESET_ALL + '\n')
-
 
     # ----------------------------------------------------------
     # EXECUTION
@@ -227,7 +236,6 @@ def main():
         _, frame = capture.read()
         # Create a copy of the frame to manipulate
         frame_gui = copy.deepcopy(frame)
-
 
         # Segment image -> segmented function
         mask_frame = segmented(frame_gui, mins, maxs, window_segmented)
@@ -244,12 +252,10 @@ def main():
             canvas_paint(window_canvas, color_paint, canvas, centroids, thickness_line, shake_prevention)
 
         # If the shake prevention mode is activated allow to paint with mouse
-
         if shake_prevention:
             draw_mouse_partial = partial(draw_mouse, color=color_paint, thickness=thickness_line)
             cv2.setMouseCallback(window_canvas, draw_mouse_partial, param=canvas)
             cv2.imshow(window_canvas, canvas)
-
 
         cv2.imshow(window_original, frame_gui)
 
@@ -292,12 +298,16 @@ def main():
         elif key == ord('v'):
             canvas = frame
             print('Picture taken! You can now draw on top of it!')
-        elif key== ord('s'):
+        elif key == ord('s'):
             # call the 'draw_rectangle' function
+            draw_rectangle_partial = partial(draw_rectangle, color_paint, thickness_line)
+            cv2.setMouseCallback(window_canvas, draw_rectangle_partial, param=canvas)
             print('Rectangle correctly drawn')
-        elif key== ord('e'):
+        elif key == ord('o'):
             # call the 'draw_circle' function
+            draw_circle()
             print('Circle correctly drawn')
+
 
 if __name__ == '__main__':
     main()
