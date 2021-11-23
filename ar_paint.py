@@ -79,20 +79,24 @@ def largest_object(mask, window):
 # ----------------------------------------------------------
 # FUNCTION TO DRAW ON WINDOW CANVAS
 # ----------------------------------------------------------
-def canvas_paint(window, color, image, points, thickness, shake_prevention):
+def canvas_paint(window, color, image, points, thickness, shake_prevention, circle_draw, rectangle_draw):
 
-    if shake_prevention:
-        # Check if distance < threshold -> draw line
-        dist = math.dist(points[-1], points[-2])
-        if dist < 20:
+    if (circle_draw == False & rectangle_draw == False): #Checks if currently drawing a circle
+        if shake_prevention:
+            # Check if distance < threshold -> draw line
+            #Also checks if it's painting a circle
+            dist = math.dist(points[-1], points[-2])
+            if dist < 20:
+                # Draw line
+                cv2.line(image, points[-1], points[-2], color, thickness)
+                cv2.imshow(window, image)
+        # If shake prevention not activated -> draw line anyway
+        else:
             # Draw line
             cv2.line(image, points[-1], points[-2], color, thickness)
             cv2.imshow(window, image)
-    # If shake prevention not activated -> draw line anyway
-    else:
-        # Draw line
-        cv2.line(image, points[-1], points[-2], color, thickness)
-        cv2.imshow(window, image)
+
+
 
 
 # ------------------------------------------------------------------
@@ -184,9 +188,19 @@ def main():
     canvas = 255*np.ones(frame.shape, dtype=np.uint8)
     cv2.imshow(window_canvas, canvas)
 
+    #Initialize a "canvas-like" object to show a circle while it's being drawn
+    image_circle = canvas
+
     # Black as pre defined color to paint
     color_paint = (0, 0, 0)
     centroids = []
+
+    # Flag to check if we're drawing a circle
+    circle_draw = False
+
+    # Flag to check if we're drawing a rectangle
+    rectangle_draw = False
+
 
     # Explain how the program runs
     print(Back.RED + '   ' + Style.RESET_ALL + ' Hello, welcome to our Augmented Reality Paint program :) '
@@ -229,7 +243,7 @@ def main():
             if len(centroids) == 1:
                 centroids.append(centroids[0])
             # Paint using the centroid as pen -> canvas_paint function
-            canvas_paint(window_canvas, color_paint, canvas, centroids, thickness_line, shake_prevention)
+            canvas_paint(window_canvas, color_paint, canvas, centroids, thickness_line, shake_prevention, circle_draw, rectangle_draw)
 
         # If the shake prevention mode is activated allow to paint with mouse
         if shake_prevention:
@@ -238,6 +252,8 @@ def main():
             cv2.imshow(window_canvas, canvas)
 
         cv2.imshow(window_original, frame_gui)
+
+
 
         # key controls
         key = cv2.waitKey(10)
@@ -278,25 +294,40 @@ def main():
         elif key == ord('v'):
             canvas = frame
             print('Picture taken! You can now draw on top of it!')
-        elif key == ord('s'):
-            # TODO: draw rectangle
-            print('Drawing rectangle')
 
         elif key == ord('o'):
-            drawing_flag = False
-            # TODO: draw circle
-            print('Drawing circle')
-            cx, cy = largest_object(mask_frame, window_largest)
-            center_coordinates = (cx,cy)
-            while drawing_flag == False:
-                stop_key = cv2.waitKey(10)
-                if stop_key == ord('o'):
-                    drawing_flag = True
-                cx, cy = largest_object(mask_frame, window_largest)
-                actual_coordinates = (cx, cy)
-                radius = int(math.dist(center_coordinates, actual_coordinates))
-                circle_image = cv2.circle(canvas, center_coordinates, radius, color_paint, thickness_line)
-                cv2.imshow(window_canvas, circle_image)
+            if circle_draw == False:
+                circle_draw = True
+                center_coordinates = centroid
+                print("You are now drawing a circle")
+            elif circle_draw == True:
+                circle_draw = False
+                canvas = cv2.circle(canvas, center_coordinates, circle_radius, color_paint, thickness_line)
+                print("Circle finished!")
+
+        elif key == ord('s'):
+            if rectangle_draw == False:
+                rectangle_draw = True
+                start_coordinates = centroid
+                print("You are now drawing a rectangle")
+            elif rectangle_draw == True:
+                rectangle_draw = False
+                canvas = cv2.rectangle(canvas, start_coordinates, end_coordinates, color_paint, thickness_line)
+                print("Rectangle finished!")
+
+
+        elif circle_draw == True:
+            actual_coordinates = centroid
+            circle_radius = int(math.dist(center_coordinates, actual_coordinates))
+            image_circle = canvas
+            image_circle = cv2.circle(image_circle, center_coordinates, circle_radius, color_paint, thickness_line)
+            cv2.imshow(window_canvas, image_circle)
+
+        elif rectangle_draw == True:
+            end_coordinates = centroid
+            image_rectangle = canvas
+            image_rectangle = cv2.rectangle(image_rectangle, start_coordinates, end_coordinates, color_paint, thickness_line)
+            cv2.imshow(window_canvas, image_rectangle)
 
 
 if __name__ == '__main__':
