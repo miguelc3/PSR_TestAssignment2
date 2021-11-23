@@ -82,7 +82,7 @@ def largest_object(mask, window):
 # ----------------------------------------------------------
 def canvas_paint(window, color, image, points, thickness, shake_prevention, circle_draw, rectangle_draw):
 
-    if (circle_draw == False and rectangle_draw == False):  # Checks if currently drawing a circle
+    if (circle_draw == False and rectangle_draw == False):  # Checks if currently drawing a circle or a rectangle
         if shake_prevention:
             # Check if distance < threshold -> draw line
             #Also checks if it's painting a circle
