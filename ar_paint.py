@@ -80,22 +80,29 @@ def largest_object(mask, window):
 # ----------------------------------------------------------
 # FUNCTION TO DRAW ON WINDOW CANVAS
 # ----------------------------------------------------------
-def canvas_paint(window, color, image, points, thickness, shake_prevention, circle_draw, rectangle_draw):
+def canvas_paint(window, color, image, points, thickness, shake_prevention, circle_draw, rectangle_draw, stream, frame):
 
-    if (circle_draw == False and rectangle_draw == False):  # Checks if currently drawing a circle or a rectangle
+    if not circle_draw and not rectangle_draw:  # Checks if currently drawing a circle or a rectangle
         if shake_prevention:
             # Check if distance < threshold -> draw line
-            #Also checks if it's painting a circle
+            # Also checks if it's painting a circle
             dist = math.dist(points[-1], points[-2])
             if dist < 20:
-                # Draw line
                 cv2.line(image, points[-1], points[-2], color, thickness)
-                cv2.imshow(window, image)
+                if stream:
+                    canvas_blend = img_blend(image, frame)
+                    cv2.imshow(window, canvas_blend)
+                else:
+                    cv2.imshow(window, image)
+
         # If shake prevention not activated -> draw line anyway
         else:
-            # Draw line
             cv2.line(image, points[-1], points[-2], color, thickness)
-            cv2.imshow(window, image)
+            if stream:
+                canvas_blend = img_blend(image, frame)
+                cv2.imshow(window, canvas_blend)
+            else:
+                cv2.imshow(window, image)
 
 
 # ------------------------------------------------------------------
@@ -121,6 +128,52 @@ def draw_mouse(event, x, y, flags, param, color, thickness):
         drawing_mouse = False
         cv2.line(param, (xi_mouse, yi_mouse), (x, y), color, thickness)
         print('Ended painting at: (x, y) = ' + str(x) + ', ' + str(y))
+
+
+# ------------------------------------------------------------------
+# CREATE A BLEND IMAGE -> ADVANCED FUNCT 2
+# ------------------------------------------------------------------
+def img_blend(img, frame):
+
+    # mask of white pix
+    mins = np.array([255, 255, 255])
+    maxs = np.array([255, 255, 255])
+    mask_white = cv2.inRange(img, mins, maxs)
+
+    # mask to bool
+    mask_white = mask_white.astype(np.bool)
+
+    # draw to stream
+    frame_gui = copy.deepcopy(frame)
+    frame_gui[~mask_white] = img[~mask_white]
+
+    return frame_gui
+
+
+# ------------------------------------------------------------------
+# STUFF TO PRINT IN THE BEGINNING
+# ------------------------------------------------------------------
+def print_stuff(shake_prevention):
+    # Explain how the program runs
+    print(Back.RED + '   ' + Style.RESET_ALL + ' Hello, welcome to our Augmented Reality Paint program :) '
+          + Back.RED + '   ' + Style.RESET_ALL + '\n\n')
+    print('This program will use the limits of segmentation defined on the Color Segmenter file')
+    print('Use the segmented object to draw on the canvas window \n')
+    print(Fore.BLUE + 'Special keys: ' + Style.RESET_ALL)
+    print(Back.GREEN + '                                  ' + Style.RESET_ALL)
+    print('r -> Change color to red')
+    print('g -> Change color to green')
+    print('b -> Change color to blue')
+    print('+ -> Increase drawing thickness')
+    print('- -> Decrease drawing thickness')
+    print('c -> Clear canvas')
+    print('w -> save image')
+    print('v -> Print picture to draw')
+    print('s -> Draw rectangle')
+    print('o -> Draw circle')
+    if shake_prevention:
+        print('You are using shake prevention mode, you can also draw with the mouse')
+    print(Back.GREEN + '                                  ' + Style.RESET_ALL + '\n')
 
 
 # ---------------------------------------------------------
@@ -184,26 +237,11 @@ def main():
     # Flag to check if we're drawing a rectangle
     rectangle_draw = False
 
-    # Explain how the program runs
-    print(Back.RED + '   ' + Style.RESET_ALL + ' Hello, welcome to our Augmented Reality Paint program :) '
-          + Back.RED + '   ' + Style.RESET_ALL + '\n\n')
-    print('This program will use the limits of segmentation defined on the Color Segmenter file')
-    print('Use the segmented object to draw on the canvas window \n')
-    print(Fore.BLUE + 'Special keys: ' + Style.RESET_ALL)
-    print(Back.GREEN + '                                  ' + Style.RESET_ALL)
-    print('r -> Change color to red')
-    print('g -> Change color to green')
-    print('b -> Change color to blue')
-    print('+ -> Increase drawing thickness')
-    print('- -> Decrease drawing thickness')
-    print('c -> Clear canvas')
-    print('w -> save image')
-    print('v -> Print picture to draw')
-    print('s -> Draw rectangle')
-    print('o -> Draw circle')
-    if shake_prevention:
-        print('You are using shake prevention mode, you can also draw with the mouse')
-    print(Back.GREEN + '                                  ' + Style.RESET_ALL + '\n')
+    # Variable to show stream on canvas
+    stream = False
+
+    # Explain how to use the program -> print_stuff function
+    print_stuff(shake_prevention)
 
     # ----------------------------------------------------------
     # EXECUTION
@@ -225,14 +263,19 @@ def main():
             if len(centroids) == 1:
                 centroids.append(centroids[0])
             # Paint using the centroid as pen -> canvas_paint function
-            canvas_paint(window_canvas, color_paint, canvas, centroids, thickness_line, shake_prevention, circle_draw, rectangle_draw)
+            canvas_paint(window_canvas, color_paint, canvas, centroids, thickness_line, shake_prevention,
+                         circle_draw, rectangle_draw, stream, frame)
 
         # If the shake prevention mode is activated allow to paint with mouse
         if shake_prevention:
             draw_mouse_partial = partial(draw_mouse, color=color_paint, thickness=thickness_line)
             cv2.setMouseCallback(window_canvas, draw_mouse_partial, param=canvas)
-            if not circle_draw and not rectangle_draw:
+            if not circle_draw and not rectangle_draw and not stream:
                 cv2.imshow(window_canvas, canvas)
+            elif stream and (circle_draw or rectangle_draw):
+                # Replace image
+                canvas_blend = img_blend(canvas, frame)
+                cv2.imshow(window_canvas, canvas_blend)
 
         cv2.imshow(window_original, frame_gui)
 
@@ -281,8 +324,11 @@ def main():
                 print('The thickness cant be decreased further')
 
         elif key == ord('v'):
-            canvas = frame
-            print('Picture taken! You can now draw on top of it!')
+            stream = ~stream
+            if stream:
+                print('You pressed "v". You can draw on top of the stream now')
+            else:
+                print('You pressed "v". You can draw on the canvas')
 
         elif key == ord('o'):
             if not circle_draw:
@@ -313,10 +359,26 @@ def main():
 
         elif rectangle_draw:
             end_coordinates = centroid
-            image_rectangle = np.copy(canvas)
-            image_rectangle = cv2.rectangle(image_rectangle, start_coordinates, end_coordinates, color_paint, thickness_line)
-            cv2.imshow(window_canvas, image_rectangle)
+            if not stream:
+                image_rectangle = np.copy(canvas)
+                image_rectangle = cv2.rectangle(image_rectangle, start_coordinates, end_coordinates, color_paint,
+                                                thickness_line)
+                cv2.imshow(window_canvas, image_rectangle)
+            else:
+                canvas_blend = img_blend(canvas, frame)
+                cv2.imshow(window_canvas, canvas_blend)
+                image_rectangle = np.copy(canvas_blend)
+                image_rectangle = cv2.rectangle(image_rectangle, start_coordinates, end_coordinates, color_paint,
+                                                thickness_line)
+                cv2.imshow(window_canvas, image_rectangle)
 
+        # Display stream on canvas
+        elif stream:
+            # Replace image
+            canvas_blend = img_blend(canvas, frame)
+            cv2.imshow(window_canvas, canvas_blend)
+        elif not stream:
+            cv2.imshow(window_canvas, canvas)
 
 
 if __name__ == '__main__':
