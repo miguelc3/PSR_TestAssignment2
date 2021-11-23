@@ -15,7 +15,6 @@ DIOGO VIEIRA
 # -------------------------------------
 import copy
 import cv2
-# import cv2 as cv
 import argparse
 import json
 import numpy as np
@@ -23,6 +22,7 @@ import time
 from colorama import Back, Fore, Style
 import math
 from functools import partial
+
 
 #------------------------------------------
 # Global variables
@@ -43,6 +43,7 @@ def segmented(frame, mins, maxs, window):
     cv2.imshow(window, mask_frame)
 
     return mask_frame
+
 
 # ----------------------------------------------------------
 # FUNCTION TO FIND THE LARGEST OBJECT AND THE CENTROID
@@ -81,7 +82,7 @@ def largest_object(mask, window):
 # ----------------------------------------------------------
 def canvas_paint(window, color, image, points, thickness, shake_prevention, circle_draw, rectangle_draw):
 
-    if (circle_draw == False & rectangle_draw == False): #Checks if currently drawing a circle
+    if circle_draw == False & rectangle_draw == False:  # Checks if currently drawing a circle
         if shake_prevention:
             # Check if distance < threshold -> draw line
             #Also checks if it's painting a circle
@@ -95,8 +96,6 @@ def canvas_paint(window, color, image, points, thickness, shake_prevention, circ
             # Draw line
             cv2.line(image, points[-1], points[-2], color, thickness)
             cv2.imshow(window, image)
-
-
 
 
 # ------------------------------------------------------------------
@@ -122,19 +121,6 @@ def draw_mouse(event, x, y, flags, param, color, thickness):
         drawing_mouse = False
         cv2.line(param, (xi_mouse, yi_mouse), (x, y), color, thickness)
         print('Ended painting at: (x, y) = ' + str(x) + ', ' + str(y))
-
-# ------------------------------------------------------------------
-# FUNCTION TO DRAW SQUARE WITH MOUSE
-# ------------------------------------------------------------------
-
-
-# 1 step: save the mouse initial coordinates in a tuple (x,y)
-
-# 2 step: print circle with color choosed. Adapt the dimension in function of the mouse movement
-
-# 3 step: check if the key is pressed or not (WHILE)
-
-# 4 step: if the key is pressed -> calculate radius as: distance(center,last_mouse_posiion)
 
 
 # ---------------------------------------------------------
@@ -201,7 +187,6 @@ def main():
     # Flag to check if we're drawing a rectangle
     rectangle_draw = False
 
-
     # Explain how the program runs
     print(Back.RED + '   ' + Style.RESET_ALL + ' Hello, welcome to our Augmented Reality Paint program :) '
           + Back.RED + '   ' + Style.RESET_ALL + '\n\n')
@@ -253,26 +238,29 @@ def main():
 
         cv2.imshow(window_original, frame_gui)
 
-
-
         # key controls
         key = cv2.waitKey(10)
         if key == ord('q'):
             print('You pressed "q" to exit. Good Bye!')
             break
+
         elif key == ord('g'):
             color_paint = (0, 255, 0)
             print('You press "g" to paint green')
+
         elif key == ord('r'):
             color_paint = (0, 0, 255)
             print('You press "r" to paint red')
+
         elif key == ord('b'):
             color_paint = (255, 0, 0)
             print('You press "b" to paint blue')
+
         elif key == ord('c'):
             canvas = 255 * np.ones(frame.shape, dtype=np.uint8)
             cv2.imshow(window_canvas, canvas)
             print('You pressed "c" to clear canvas')
+
         elif key == ord('w'):
             t = time.ctime(time.time())
             t = t.replace(' ', '_')
@@ -282,48 +270,50 @@ def main():
                 print('File saved successfully')
             else:
                 print('Error in saving file')
+
         elif key == ord('+'):
             thickness_line += 1
             print('You increased the brush thickness to ' + str(thickness_line))
+
         elif key == ord('-'):
             if thickness_line > 1:
                 thickness_line -= 1
                 print('You decreased the brush thickness to ' + str(thickness_line))
             else:
                 print('The thickness cant be decreased further')
+
         elif key == ord('v'):
             canvas = frame
             print('Picture taken! You can now draw on top of it!')
 
         elif key == ord('o'):
-            if circle_draw == False:
+            if not circle_draw:
                 circle_draw = True
                 center_coordinates = centroid
                 print("You are now drawing a circle")
-            elif circle_draw == True:
+            elif circle_draw:
                 circle_draw = False
                 canvas = cv2.circle(canvas, center_coordinates, circle_radius, color_paint, thickness_line)
                 print("Circle finished!")
 
         elif key == ord('s'):
-            if rectangle_draw == False:
+            if not rectangle_draw:
                 rectangle_draw = True
                 start_coordinates = centroid
                 print("You are now drawing a rectangle")
-            elif rectangle_draw == True:
+            elif rectangle_draw:
                 rectangle_draw = False
                 canvas = cv2.rectangle(canvas, start_coordinates, end_coordinates, color_paint, thickness_line)
                 print("Rectangle finished!")
 
-
-        elif circle_draw == True:
+        elif circle_draw:
             actual_coordinates = centroid
             circle_radius = int(math.dist(center_coordinates, actual_coordinates))
             image_circle = canvas
             image_circle = cv2.circle(image_circle, center_coordinates, circle_radius, color_paint, thickness_line)
             cv2.imshow(window_canvas, image_circle)
 
-        elif rectangle_draw == True:
+        elif rectangle_draw:
             end_coordinates = centroid
             image_rectangle = canvas
             image_rectangle = cv2.rectangle(image_rectangle, start_coordinates, end_coordinates, color_paint, thickness_line)
