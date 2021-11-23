@@ -82,7 +82,7 @@ def largest_object(mask, window):
 # ----------------------------------------------------------
 def canvas_paint(window, color, image, points, thickness, shake_prevention, circle_draw, rectangle_draw):
 
-    if circle_draw == False & rectangle_draw == False:  # Checks if currently drawing a circle
+    if (circle_draw == False and rectangle_draw == False):  # Checks if currently drawing a circle
         if shake_prevention:
             # Check if distance < threshold -> draw line
             #Also checks if it's painting a circle
@@ -174,9 +174,6 @@ def main():
     canvas = 255*np.ones(frame.shape, dtype=np.uint8)
     cv2.imshow(window_canvas, canvas)
 
-    #Initialize a "canvas-like" object to show a circle while it's being drawn
-    image_circle = canvas
-
     # Black as pre defined color to paint
     color_paint = (0, 0, 0)
     centroids = []
@@ -234,7 +231,8 @@ def main():
         if shake_prevention:
             draw_mouse_partial = partial(draw_mouse, color=color_paint, thickness=thickness_line)
             cv2.setMouseCallback(window_canvas, draw_mouse_partial, param=canvas)
-            cv2.imshow(window_canvas, canvas)
+            if not circle_draw and not rectangle_draw:
+                cv2.imshow(window_canvas, canvas)
 
         cv2.imshow(window_original, frame_gui)
 
@@ -309,15 +307,16 @@ def main():
         elif circle_draw:
             actual_coordinates = centroid
             circle_radius = int(math.dist(center_coordinates, actual_coordinates))
-            image_circle = canvas
+            image_circle = np.copy(canvas)
             image_circle = cv2.circle(image_circle, center_coordinates, circle_radius, color_paint, thickness_line)
             cv2.imshow(window_canvas, image_circle)
 
         elif rectangle_draw:
             end_coordinates = centroid
-            image_rectangle = canvas
+            image_rectangle = np.copy(canvas)
             image_rectangle = cv2.rectangle(image_rectangle, start_coordinates, end_coordinates, color_paint, thickness_line)
             cv2.imshow(window_canvas, image_rectangle)
+
 
 
 if __name__ == '__main__':
