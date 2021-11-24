@@ -48,10 +48,10 @@ def segmented(frame, mins, maxs, window):
 # ----------------------------------------------------------
 # FUNCTION TO FIND THE LARGEST OBJECT AND THE CENTROID
 # ----------------------------------------------------------
-def largest_object(mask, window):
+def largest_object(mask, window_draw, window_original, frame):
     # Initialize the the window of the largest object -> all black
     mask_largest = np.zeros(mask.shape, dtype=np.uint8)
-    cv2.imshow(window, mask_largest)
+    cv2.imshow(window_draw, mask_largest)
 
     # Find the largest object
     contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
@@ -73,7 +73,12 @@ def largest_object(mask, window):
         cy = 0
 
     # Display the largest object
-    cv2.imshow(window, mask_largest)
+    cv2.imshow(window_draw, mask_largest)
+
+    # make the object look "greener"
+    cv2.add(frame, (-30, 80, -30, 0), dst=frame, mask=mask_largest)
+    cv2.imshow(window_original, frame)
+
     return cx, cy
 
 
@@ -255,7 +260,7 @@ def main():
         mask_frame = segmented(frame_gui, mins, maxs, window_segmented)
 
         # Find largest objet and the respective centroid -> largest_object function
-        cx, cy = largest_object(mask_frame, window_largest)
+        cx, cy = largest_object(mask_frame, window_largest, window_original, frame_gui)  # make object green
         centroid = (cx, cy)
         if centroid != (0, 0):
             frame_gui = cv2.circle(frame_gui, centroid, radius, color_centroid, thickness_centroid)
