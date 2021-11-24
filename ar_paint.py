@@ -85,7 +85,8 @@ def largest_object(mask, window_draw, window_original, frame):
 # ----------------------------------------------------------
 # FUNCTION TO DRAW ON WINDOW CANVAS
 # ----------------------------------------------------------
-def canvas_paint(window, color, image, points, thickness, shake_prevention, circle_draw, rectangle_draw, stream, frame):
+def canvas_paint(window, color, image, points, thickness, shake_prevention, circle_draw, rectangle_draw, stream, frame,
+                 flip_vertical, flip_horizontal):
 
     if not circle_draw and not rectangle_draw:  # Checks if currently drawing a circle or a rectangle
         if shake_prevention:
@@ -96,18 +97,48 @@ def canvas_paint(window, color, image, points, thickness, shake_prevention, circ
                 cv2.line(image, points[-1], points[-2], color, thickness)
                 if stream:
                     canvas_blend = img_blend(image, frame)
-                    cv2.imshow(window, canvas_blend)
+                    if not flip_vertical and not flip_horizontal:
+                        cv2.imshow(window, canvas_blend)
+                    if flip_vertical:
+                        canvas_blend_inv = cv2.flip(canvas_blend, 0)
+                        cv2.imshow(window, canvas_blend_inv)
+                    if flip_horizontal:
+                        canvas_blend_inv = cv2.flip(canvas_blend, 1)
+                        cv2.imshow(window, canvas_blend_inv)
+
                 else:
-                    cv2.imshow(window, image)
+                    if not flip_vertical and not flip_horizontal:
+                        cv2.imshow(window, image)
+                    elif flip_vertical:
+                        image_inv = cv2.flip(image, 0)
+                        cv2.imshow(window, image_inv)
+                    elif flip_horizontal:
+                        image_inv = cv2.flip(image, 1)
+                        cv2.imshow(window, image_inv)
 
         # If shake prevention not activated -> draw line anyway
         else:
             cv2.line(image, points[-1], points[-2], color, thickness)
             if stream:
                 canvas_blend = img_blend(image, frame)
-                cv2.imshow(window, canvas_blend)
+                if not flip_vertical and not flip_horizontal:
+                    cv2.imshow(window, canvas_blend)
+                elif flip_vertical:
+                    canvas_blend_inv = cv2.flip(canvas_blend, 0)
+                    cv2.imshow(window, canvas_blend_inv)
+                elif flip_horizontal:
+                    canvas_blend_inv = cv2.flip(canvas_blend, 1)
+                    cv2.imshow(window, canvas_blend_inv)
+
             else:
-                cv2.imshow(window, image)
+                if not flip_vertical and not flip_horizontal:
+                    cv2.imshow(window, image)
+                elif flip_vertical:
+                    image_inv = cv2.flip(image, 0)
+                    cv2.imshow(window, image_inv)
+                elif flip_horizontal:
+                    image_inv = cv2.flip(image, 1)
+                    cv2.imshow(window, image_inv)
 
 
 # ------------------------------------------------------------------
@@ -245,6 +276,10 @@ def main():
     # Variable to show stream on canvas
     stream = False
 
+    # Variable to chek if image inverted
+    flip_vertical = False
+    flip_horizontal = False
+
     # Explain how to use the program -> print_stuff function
     print_stuff(shake_prevention)
 
@@ -269,7 +304,7 @@ def main():
                 centroids.append(centroids[0])
             # Paint using the centroid as pen -> canvas_paint function
             canvas_paint(window_canvas, color_paint, canvas, centroids, thickness_line, shake_prevention,
-                         circle_draw, rectangle_draw, stream, frame)
+                         circle_draw, rectangle_draw, stream, frame, flip_vertical, flip_horizontal)
 
         # If the shake prevention mode is activated allow to paint with mouse
         if shake_prevention:
@@ -282,45 +317,64 @@ def main():
                 canvas_blend = img_blend(canvas, frame)
                 cv2.imshow(window_canvas, canvas_blend)
 
-        cv2.imshow(window_original, frame_gui)
+        if not flip_vertical and not flip_horizontal:
+            cv2.imshow(window_original, frame_gui)
+        elif flip_vertical:
+            frame_gui = cv2.flip(frame, 0)
+            cv2.imshow(window_original, frame_gui)
+        elif flip_horizontal:
+            frame_gui = cv2.flip(frame, 1)
+            cv2.imshow(window_original, frame_gui)
 
         # key controls
         key = cv2.waitKey(10)
+        # q for quit
         if key == ord('q'):
             print('You pressed "q" to exit. Good Bye!')
             break
 
+        # g to change color to green
         elif key == ord('g'):
             color_paint = (0, 255, 0)
             print('You press "g" to paint green')
 
+        # r to change color to red
         elif key == ord('r'):
             color_paint = (0, 0, 255)
             print('You press "r" to paint red')
 
+        # b to change color to blue
         elif key == ord('b'):
             color_paint = (255, 0, 0)
             print('You press "b" to paint blue')
 
+        # c to clear canvas
         elif key == ord('c'):
             canvas = 255 * np.ones(frame.shape, dtype=np.uint8)
             cv2.imshow(window_canvas, canvas)
             print('You pressed "c" to clear canvas')
 
+        # w to save image
         elif key == ord('w'):
             t = time.ctime(time.time())
             t = t.replace(' ', '_')
             filename = 'drawing_' + t + '.png'
-            result = cv2.imwrite(filename, canvas)
+            if not stream:
+                result = cv2.imwrite(filename, canvas)
+            else:
+                result = cv2.imwrite(filename, img_blend(canvas, frame))
+
             if result:
                 print('File saved successfully')
             else:
                 print('Error in saving file')
 
+        # + to increase the thickness
         elif key == ord('+'):
             thickness_line += 1
             print('You increased the brush thickness to ' + str(thickness_line))
 
+        # - to decrease the thickness
         elif key == ord('-'):
             if thickness_line > 1:
                 thickness_line -= 1
@@ -328,6 +382,7 @@ def main():
             else:
                 print('The thickness cant be decreased further')
 
+        # v to stream video on the window_canvas
         elif key == ord('v'):
             stream = ~stream
             if stream:
@@ -335,6 +390,18 @@ def main():
             else:
                 print('You pressed "v". You can draw on the canvas')
 
+        # Extra -> flip the image vertically and horizontally
+        # u for up -> vertically ... v was already taken for the second advanced functionality
+        elif key == ord('u'):
+            flip_vertical = not flip_vertical
+            print('You pressed "u" to invert the image vertically')
+
+        # h for horizontal
+        elif key == ord('h'):
+            flip_horizontal = not flip_horizontal
+            print('You pressed "h" to invert the image horizontally')
+
+        # o to draw circles
         elif key == ord('o'):
             if not circle_draw:
                 circle_draw = True
@@ -345,6 +412,7 @@ def main():
                 canvas = cv2.circle(canvas, center_coordinates, circle_radius, color_paint, thickness_line)
                 print("Circle finished!")
 
+        # s to draw squares
         elif key == ord('s'):
             if not rectangle_draw:
                 rectangle_draw = True
@@ -378,12 +446,17 @@ def main():
                 cv2.imshow(window_canvas, image_rectangle)
 
         # Display stream on canvas
+        '''
+        # I think this part is not necessary, it is already on the draw_canvas function
         elif stream:
             # Replace image
             canvas_blend = img_blend(canvas, frame)
-            cv2.imshow(window_canvas, canvas_blend)
-        elif not stream:
-            cv2.imshow(window_canvas, canvas)
+            if not flip_vertical:
+                cv2.imshow(window_original, canvas_blend)
+            else:
+                canvas_blend_inv = cv2.flip(canvas_blend, 0)
+                cv2.imshow(window_original, canvas_blend_inv)
+        '''
 
     # ---------------------------------------------------
     # Terminating
