@@ -24,9 +24,9 @@ import math
 from functools import partial
 
 
-#------------------------------------------
+# ------------------------------------------
 # Global variables
-#------------------------------------------
+# ------------------------------------------
 # To draw when use shake prevention
 drawing_mouse = False
 (yi_mouse, xi_mouse) = (None, None)
@@ -384,6 +384,12 @@ def main():
             cv2.imshow(window_canvas, canvas_blend)
         elif not stream:
             cv2.imshow(window_canvas, canvas)
+
+    # ---------------------------------------------------
+    # Terminating
+    # ---------------------------------------------------
+    capture.release()
+    cv2.destroyAllWindows()
 
 
 if __name__ == '__main__':
