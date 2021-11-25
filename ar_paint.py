@@ -138,7 +138,6 @@ def canvas_paint(window, color, image, points, thickness, shake_prevention, circ
                 elif flip_horizontal:
                     image_inv = cv2.flip(image, 1)
                     cv2.imshow(window, image_inv)
-    # ADD GABRIELE
     else:
         if shake_prevention:
                 if stream:
@@ -181,7 +180,6 @@ def canvas_paint(window, color, image, points, thickness, shake_prevention, circ
                 elif flip_horizontal:
                     image_inv = cv2.flip(image, 1)
                     cv2.imshow(window, image_inv)
-    # STOP ADD GABRIELE
 
 # ------------------------------------------------------------------
 # FUNCTION TO DRAW WITH MOUSE WHEN USE_SHAKE_PREVENTION IS ACTIVATED
@@ -207,7 +205,6 @@ def draw_mouse(event, x, y, flags, param, color, thickness):
         cv2.line(param, (xi_mouse, yi_mouse), (x, y), color, thickness)
         print('Ended painting at: (x, y) = ' + str(x) + ', ' + str(y))
 
-
 # ------------------------------------------------------------------
 # CREATE A BLEND IMAGE -> ADVANCED FUNCT 2
 # ------------------------------------------------------------------
@@ -226,7 +223,6 @@ def img_blend(img, frame):
     frame_gui[~mask_white] = img[~mask_white]
 
     return frame_gui
-
 
 # ------------------------------------------------------------------
 # STUFF TO PRINT IN THE BEGINNING
@@ -256,7 +252,6 @@ def print_stuff(shake_prevention):
     if shake_prevention:
         print('You are using shake prevention mode, you can also draw with the mouse')
     print(Back.GREEN + '                                  ' + Style.RESET_ALL + '\n')
-
 
 # ---------------------------------------------------------
 # MAIN FUNCTION
@@ -449,26 +444,30 @@ def main():
 
         # o to draw circles
         elif key == ord('o'):
-            if not circle_draw:
-                circle_draw = True
-                center_coordinates = centroid
-                print("You are now drawing a circle")
-            elif circle_draw:
-                circle_draw = False
-                canvas = cv2.circle(canvas, center_coordinates, circle_radius, color_paint, thickness_line)
-                print("Circle finished!")
-
+            if shake_prevention:
+                if not circle_draw:
+                    circle_draw = True
+                    center_coordinates = centroid
+                    print("You are now drawing a circle")
+                elif circle_draw:
+                    circle_draw = False
+                    canvas = cv2.circle(canvas, center_coordinates, circle_radius, color_paint, thickness_line)
+                    print("Circle finished!")
+            else:
+                print("You need the 'shake prevention mode' functionality to draw circles")
         # s to draw squares
         elif key == ord('s'):
-            if not rectangle_draw:
-                rectangle_draw = True
-                start_coordinates = centroid
-                print("You are now drawing a rectangle")
-            elif rectangle_draw:
-                rectangle_draw = False
-                canvas = cv2.rectangle(canvas, start_coordinates, end_coordinates, color_paint, thickness_line)
-                print("Rectangle finished!")
-
+            if shake_prevention:
+                if not rectangle_draw:
+                    rectangle_draw = True
+                    start_coordinates = centroid
+                    print("You are now drawing a rectangle")
+                elif rectangle_draw:
+                    rectangle_draw = False
+                    canvas = cv2.rectangle(canvas, start_coordinates, end_coordinates, color_paint, thickness_line)
+                    print("Rectangle finished!")
+            else:
+                print("You need the 'shake prevention mode' functionality to draw circles")
 
         elif key == ord('t'):
 
@@ -538,7 +537,6 @@ def main():
             print(color_list)
             cv2.imshow(window_canvas, canvas)
 
-
         elif key == ord('l'):
             if testing:
                 print('Let\'s see how you did!')
@@ -555,7 +553,6 @@ def main():
                 part2 = cv2.imread('result_01.jpg')
                 part3 = cv2.imread('result_10.jpg')
                 part4 = cv2.imread('result_11.jpg')
-
 
                 #Evaluate part1
                 mask1_black = cv2.inRange(part1, np.array([0, 0, 0]), np.array([10, 10, 10]))
@@ -593,7 +590,6 @@ def main():
                 elif color_list[1] == 4:
                     val2 = (mask2_green > 0).mean() * 100
 
-
                 # Evaluate part3
                 mask3_black = cv2.inRange(part3, np.array([0, 0, 0]), np.array([10, 10, 10]))
 
@@ -630,7 +626,6 @@ def main():
                 elif color_list[3] == 4:
                     val4 = (mask4_green > 0).mean() * 100
 
-
                 score = (val1 + val2+ val3 + val4)/4
 
                 print('You scored ' + str(score) +'%!')
@@ -665,26 +660,11 @@ def main():
                                                 thickness_line)
                 cv2.imshow(window_canvas, image_rectangle)
 
-
-        # Display stream on canvas
-        '''
-        # I think this part is not necessary, it is already on the draw_canvas function
-        elif stream:
-            # Replace image
-            canvas_blend = img_blend(canvas, frame)
-            if not flip_vertical:
-                cv2.imshow(window_original, canvas_blend)
-            else:
-                canvas_blend_inv = cv2.flip(canvas_blend, 0)
-                cv2.imshow(window_original, canvas_blend_inv)
-        '''
-
     # ---------------------------------------------------
     # Terminating
     # ---------------------------------------------------
     capture.release()
     cv2.destroyAllWindows()
-
 
 if __name__ == '__main__':
     main()

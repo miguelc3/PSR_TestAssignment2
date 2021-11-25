@@ -42,7 +42,6 @@ def trackbar(_, window, limits):
 
     return limits, mins, maxs
 
-
 # ----------------------------------------------------------
 # MAIN FUNCTION
 # ----------------------------------------------------------
@@ -143,7 +142,6 @@ def main():
             with open(file_name, 'w') as file_handle:
                 print(Fore.GREEN + '** writing dictionary "limits" to file ' + file_name + ' **' + Style.RESET_ALL)
                 json.dump(limits, file_handle)
-
 
 if __name__ == '__main__':
     main()
