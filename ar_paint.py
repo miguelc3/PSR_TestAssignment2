@@ -22,7 +22,7 @@ import time
 from colorama import Back, Fore, Style
 import math
 from functools import partial
-import os
+
 
 # ------------------------------------------
 # Global variables
@@ -33,6 +33,7 @@ drawing_mouse = False
 # To draw squares/rectangles
 drawing_square = False
 (xi_square, yi_square) = (None, None)
+
 
 # ----------------------------------------------------------
 # FUNCTION TO SEGMENT IMAGE WITH THE LIMITS FROM THE JSON FILE
@@ -138,48 +139,7 @@ def canvas_paint(window, color, image, points, thickness, shake_prevention, circ
                 elif flip_horizontal:
                     image_inv = cv2.flip(image, 1)
                     cv2.imshow(window, image_inv)
-    else:
-        if shake_prevention:
-                if stream:
-                    canvas_blend = img_blend(image, frame)
-                    if not flip_vertical and not flip_horizontal:
-                        cv2.imshow(window, canvas_blend)
-                    if flip_vertical:
-                        canvas_blend_inv = cv2.flip(canvas_blend, 0)
-                        cv2.imshow(window, canvas_blend_inv)
-                    if flip_horizontal:
-                        canvas_blend_inv = cv2.flip(canvas_blend, 1)
-                        cv2.imshow(window, canvas_blend_inv)
 
-                else:
-                    if not flip_vertical and not flip_horizontal:
-                        cv2.imshow(window, image)
-                    elif flip_vertical:
-                        image_inv = cv2.flip(image, 0)
-                        cv2.imshow(window, image_inv)
-                    elif flip_horizontal:
-                        image_inv = cv2.flip(image, 1)
-                        cv2.imshow(window, image_inv)
-        else:
-            if stream:
-                canvas_blend = img_blend(image, frame)
-                if not flip_vertical and not flip_horizontal:
-                    cv2.imshow(window, canvas_blend)
-                elif flip_vertical:
-                    canvas_blend_inv = cv2.flip(canvas_blend, 0)
-                    cv2.imshow(window, canvas_blend_inv)
-                elif flip_horizontal:
-                    canvas_blend_inv = cv2.flip(canvas_blend, 1)
-                    cv2.imshow(window, canvas_blend_inv)
-            else:
-                if not flip_vertical and not flip_horizontal:
-                    cv2.imshow(window, image)
-                elif flip_vertical:
-                    image_inv = cv2.flip(image, 0)
-                    cv2.imshow(window, image_inv)
-                elif flip_horizontal:
-                    image_inv = cv2.flip(image, 1)
-                    cv2.imshow(window, image_inv)
 
 # ------------------------------------------------------------------
 # FUNCTION TO DRAW WITH MOUSE WHEN USE_SHAKE_PREVENTION IS ACTIVATED
@@ -205,6 +165,7 @@ def draw_mouse(event, x, y, flags, param, color, thickness):
         cv2.line(param, (xi_mouse, yi_mouse), (x, y), color, thickness)
         print('Ended painting at: (x, y) = ' + str(x) + ', ' + str(y))
 
+
 # ------------------------------------------------------------------
 # CREATE A BLEND IMAGE -> ADVANCED FUNCT 2
 # ------------------------------------------------------------------
@@ -223,6 +184,7 @@ def img_blend(img, frame):
     frame_gui[~mask_white] = img[~mask_white]
 
     return frame_gui
+
 
 # ------------------------------------------------------------------
 # STUFF TO PRINT IN THE BEGINNING
@@ -245,13 +207,10 @@ def print_stuff(shake_prevention):
     print('v -> Print picture to draw')
     print('s -> Draw rectangle')
     print('o -> Draw circle')
-    print('t -> Drawing test')
-    print('l -> Drawing test results')
-    print('u -> Invert image vertically')
-    print('h -> Invert image horizontally')
     if shake_prevention:
         print('You are using shake prevention mode, you can also draw with the mouse')
     print(Back.GREEN + '                                  ' + Style.RESET_ALL + '\n')
+
 
 # ---------------------------------------------------------
 # MAIN FUNCTION
@@ -260,7 +219,7 @@ def main():
     # ----------------------------------------------------------
     # INITIALIZATION
     # ----------------------------------------------------------
-    testing = False
+
     # Define argparse
     parser = argparse.ArgumentParser(description='Augmented Reality Paint')
     parser.add_argument('-j', '--json', type=str, required=True, help='Full path to the json file.')
@@ -444,206 +403,32 @@ def main():
 
         # o to draw circles
         elif key == ord('o'):
-            if shake_prevention:
-                if not circle_draw:
-                    circle_draw = True
-                    center_coordinates = centroid
-                    print("You are now drawing a circle")
-                elif circle_draw:
-                    circle_draw = False
-                    canvas = cv2.circle(canvas, center_coordinates, circle_radius, color_paint, thickness_line)
-                    print("Circle finished!")
-            else:
-                print("You need the 'shake prevention mode' functionality to draw circles")
+            if not circle_draw:
+                circle_draw = True
+                center_coordinates = centroid
+                print("You are now drawing a circle")
+            elif circle_draw:
+                circle_draw = False
+                canvas = cv2.circle(canvas, center_coordinates, circle_radius, color_paint, thickness_line)
+                print("Circle finished!")
+
         # s to draw squares
         elif key == ord('s'):
-            if shake_prevention:
-                if not rectangle_draw:
-                    rectangle_draw = True
-                    start_coordinates = centroid
-                    print("You are now drawing a rectangle")
-                elif rectangle_draw:
-                    rectangle_draw = False
-                    canvas = cv2.rectangle(canvas, start_coordinates, end_coordinates, color_paint, thickness_line)
-                    print("Rectangle finished!")
-            else:
-                print("You need the 'shake prevention mode' functionality to draw circles")
+            if not rectangle_draw:
+                rectangle_draw = True
+                start_coordinates = centroid
+                print("You are now drawing a rectangle")
+            elif rectangle_draw:
+                rectangle_draw = False
+                canvas = cv2.rectangle(canvas, start_coordinates, end_coordinates, color_paint, thickness_line)
+                print("Rectangle finished!")
 
-        elif key == ord('t'):
-
-            testing = True #Boolean to check if test is occurring
-
-            #Divide image into sections
-            font = cv2.FONT_HERSHEY_SIMPLEX
-
-            if not os.path.exists('patches'):
-                os.makedirs('patches')
-
-            nRows = 2  # Number of rows
-            mCols = 2  # Number of columns
-
-            img = cv2.imread('grid.jpeg')  # Reading image
-
-
-            # Dimensions of the image
-            sizeX = img.shape[1]
-            sizeY = img.shape[0]
-
-            i = 10
-
-            color_list = []
-
-            for i in range(0, nRows):
-                for j in range(0, mCols):
-                    roi = img[int(i * sizeY / nRows):int(i * sizeY / nRows + sizeY / nRows),
-                          int(j * sizeX / mCols):int(j * sizeX / mCols + sizeX / mCols)]
-
-                    flag = False
-                    while not flag:
-                        shift = int(input("Please enter a number in the range [1,4]: "))
-                        if shift in range(1, 5):
-                            flag = True
-                            print(int(shift))
-                        else:
-                            print('Value outside range [1,4]. Try again')
-                    text = str(shift)
-
-                    color_list.append(shift)
-
-                    roi = cv2.putText(roi, text, (50, 50), font, 1, (0, 255, 0), 1, cv2.LINE_AA)
-                    # cv2.imshow('rois'+str(i)+str(j), roi)
-                    cv2.imwrite('patch_' + str(i) + str(j) + ".jpg", roi)
-
-            #Merging the images
-            patch1 = cv2.imread('patch_00.jpg')
-            patch2 = cv2.imread('patch_01.jpg')
-            patch3 = cv2.imread('patch_10.jpg')
-            patch4 = cv2.imread('patch_11.jpg')
-
-            patch12 = cv2.hconcat([patch1, patch2])
-            patch34 = cv2.hconcat([patch3, patch4])
-            canvas = cv2.vconcat([patch12, patch34])
-
-            h = canvas.shape[0]
-            w = canvas.shape[1]
-
-            print('Paint the sections in accordance with their numbering:')
-            print('1 - Black;')
-            print('2 - Blue;')
-            print('3 - Red;')
-            print('4 - Green;')
-
-            print('When you\'re finished, press the \'l\' key to see how you did! :D')
-            print(color_list)
-            cv2.imshow(window_canvas, canvas)
-
-        elif key == ord('l'):
-            if testing:
-                print('Let\'s see how you did!')
-                testing = False
-
-                for i in range(0, nRows):
-                    for j in range(0, mCols):
-                        roi = canvas[int(i * sizeY / nRows):int(i * sizeY / nRows + sizeY / nRows),
-                              int(j * sizeX / mCols):int(j * sizeX / mCols + sizeX / mCols)]
-
-                        cv2.imwrite('result_' + str(i) + str(j) + ".jpg", roi)
-
-                part1 = cv2.imread('result_00.jpg')
-                part2 = cv2.imread('result_01.jpg')
-                part3 = cv2.imread('result_10.jpg')
-                part4 = cv2.imread('result_11.jpg')
-
-                #Evaluate part1
-                mask1_black = cv2.inRange(part1, np.array([0, 0, 0]), np.array([10, 10, 10]))
-
-                mask1_blue = cv2.inRange(part1, np.array([240, 0, 0]), np.array([255, 0, 0]))
-
-                mask1_green = cv2.inRange(part1, np.array([0, 240, 0]), np.array([0, 255, 0]))
-
-                mask1_red = cv2.inRange(part1, np.array([0, 0, 240]), np.array([0, 0, 255]))
-
-                if color_list[0] == 1:
-                    val1 = (mask1_black > 0).mean() * 100
-                elif color_list[0] == 2:
-                    val1 = (mask1_blue > 0).mean() * 100
-                elif color_list[0] == 3:
-                    val1 = (mask1_red > 0).mean() * 100
-                elif color_list[0] == 4:
-                    val1 = (mask1_green > 0).mean() * 100
-
-                # Evaluate part2
-                mask2_black = cv2.inRange(part2, np.array([0, 0, 0]), np.array([10, 10, 10]))
-
-                mask2_blue = cv2.inRange(part2, np.array([240, 0, 0]), np.array([255, 0, 0]))
-
-                mask2_green = cv2.inRange(part2, np.array([0, 240, 0]), np.array([0, 255, 0]))
-
-                mask2_red = cv2.inRange(part2, np.array([0, 0, 240]), np.array([0, 0, 255]))
-
-                if color_list[1] == 1:
-                    val2 = (mask2_black > 0).mean() * 100
-                elif color_list[1] == 2:
-                    val2 = (mask2_blue > 0).mean() * 100
-                elif color_list[1] == 3:
-                    val2 = (mask2_red > 0).mean() * 100
-                elif color_list[1] == 4:
-                    val2 = (mask2_green > 0).mean() * 100
-
-                # Evaluate part3
-                mask3_black = cv2.inRange(part3, np.array([0, 0, 0]), np.array([10, 10, 10]))
-
-                mask3_blue = cv2.inRange(part3, np.array([240, 0, 0]), np.array([255, 0, 0]))
-
-                mask3_green = cv2.inRange(part3, np.array([0, 240, 0]), np.array([0, 255, 0]))
-
-                mask3_red = cv2.inRange(part3, np.array([0, 0, 240]), np.array([0, 0, 255]))
-
-                if color_list[2] == 1:
-                    val3 = (mask3_black > 0).mean() * 100
-                elif color_list[2] == 2:
-                    val3 = (mask3_blue > 0).mean() * 100
-                elif color_list[2] == 3:
-                    val3 = (mask3_red > 0).mean() * 100
-                elif color_list[2] == 4:
-                    val3 = (mask3_green > 0).mean() * 100
-
-                # Evaluate part4
-                mask4_black = cv2.inRange(part4, np.array([0, 0, 0]), np.array([10, 10, 10]))
-
-                mask4_blue = cv2.inRange(part4, np.array([240, 0, 0]), np.array([255, 0, 0]))
-
-                mask4_green = cv2.inRange(part4, np.array([0, 240, 0]), np.array([0, 255, 0]))
-
-                mask4_red = cv2.inRange(part4, np.array([0, 0, 240]), np.array([0, 0, 255]))
-
-                if color_list[3] == 1:
-                    val4 = (mask4_black > 0).mean() * 100
-                elif color_list[3] == 2:
-                    val4 = (mask4_blue > 0).mean() * 100
-                elif color_list[3] == 3:
-                    val4 = (mask4_red > 0).mean() * 100
-                elif color_list[3] == 4:
-                    val4 = (mask4_green > 0).mean() * 100
-
-                score = (val1 + val2+ val3 + val4)/4
-
-                print('You scored ' + str(score) +'%!')
-            else:
-                print('You have to start the test before get the results')
         elif circle_draw:
             actual_coordinates = centroid
             circle_radius = int(math.dist(center_coordinates, actual_coordinates))
-            if not stream:
-                image_circle = np.copy(canvas)
-                image_circle = cv2.circle(image_circle, center_coordinates, circle_radius, color_paint, thickness_line)
-                cv2.imshow(window_canvas, image_circle)
-            else:
-                canvas_blend = img_blend(canvas, frame)
-                cv2.imshow(window_canvas, canvas_blend)
-                image_circle = np.copy(canvas_blend)
-                image_circle = cv2.circle(image_circle, center_coordinates, circle_radius, color_paint, thickness_line)
-                cv2.imshow(window_canvas, image_circle)
+            image_circle = np.copy(canvas)
+            image_circle = cv2.circle(image_circle, center_coordinates, circle_radius, color_paint, thickness_line)
+            cv2.imshow(window_canvas, image_circle)
 
         elif rectangle_draw:
             end_coordinates = centroid
@@ -660,11 +445,25 @@ def main():
                                                 thickness_line)
                 cv2.imshow(window_canvas, image_rectangle)
 
+        # Display stream on canvas
+        '''
+        # I think this part is not necessary, it is already on the draw_canvas function
+        elif stream:
+            # Replace image
+            canvas_blend = img_blend(canvas, frame)
+            if not flip_vertical:
+                cv2.imshow(window_original, canvas_blend)
+            else:
+                canvas_blend_inv = cv2.flip(canvas_blend, 0)
+                cv2.imshow(window_original, canvas_blend_inv)
+        '''
+
     # ---------------------------------------------------
     # Terminating
     # ---------------------------------------------------
     capture.release()
     cv2.destroyAllWindows()
+
 
 if __name__ == '__main__':
     main()
